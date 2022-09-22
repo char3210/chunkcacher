@@ -5,8 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "MinecraftServerMixin",
-    "ThreadedAnvilChunkStorageMixin",
-    "VersionedChunkStorageMixin"
+    "ThreadedAnvilChunkStorageMixin"
   ],
   "client": [
   ],
