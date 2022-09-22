@@ -37,29 +37,12 @@ public class WorldCache {
      * dude github copilot is so cool it auto generated these comments
      */
     public static void checkGeneratorOptions(GeneratorOptions generatorOptions) {
-        if (lastGeneratorOptions == null) {
-            cache.clear();
-            lastGeneratorOptions = generatorOptions;
-            return;
-        }
-
-        if (lastGeneratorOptions.getSeed() != generatorOptions.getSeed()) {
-            cache.clear();
-            lastGeneratorOptions = generatorOptions;
-            return;
-        }
-        if (lastGeneratorOptions.shouldGenerateStructures() != generatorOptions.shouldGenerateStructures()) {
-            cache.clear();
-            lastGeneratorOptions = generatorOptions;
-            return;
-        }
-        if (lastGeneratorOptions.hasBonusChest() != generatorOptions.hasBonusChest()) {
-            cache.clear();
-            lastGeneratorOptions = generatorOptions;
-            return;
-        }
-        //TODO: different superflat presets for example are not detected, so the cache is not cleared and the world is not generated correctly
-        if (!lastGeneratorOptions.getChunkGenerator().getClass().equals(generatorOptions.getChunkGenerator().getClass())) {
+        if (lastGeneratorOptions == null ||
+                lastGeneratorOptions.getSeed() != generatorOptions.getSeed() ||
+                lastGeneratorOptions.shouldGenerateStructures() != generatorOptions.shouldGenerateStructures() ||
+                lastGeneratorOptions.hasBonusChest() != generatorOptions.hasBonusChest() ||
+//TODO: different superflat presets for example are not detected, so the cache is not cleared and the world is not generated correctly
+                !lastGeneratorOptions.getChunkGenerator().getClass().equals(generatorOptions.getChunkGenerator().getClass())) {
             cache.clear();
             lastGeneratorOptions = generatorOptions;
         }
