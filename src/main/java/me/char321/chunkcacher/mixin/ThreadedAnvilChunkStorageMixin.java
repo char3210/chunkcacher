@@ -20,6 +20,7 @@ import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -29,6 +30,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.IntFunction;
 
 @Mixin(ThreadedAnvilChunkStorage.class)
 public abstract class ThreadedAnvilChunkStorageMixin {
@@ -48,10 +50,20 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
     @Shadow protected abstract CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> convertToFullChunk(ChunkHolder chunkHolder);
 
-    @Inject(method = "upgradeChunk", at = @At("TAIL"), cancellable = true, locals = LocalCapture.CAPTURE_FAILSOFT)
-    public void storeIntoCache(ChunkHolder holder, ChunkStatus requiredStatus, CallbackInfoReturnable<CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>>> cir, ChunkPos chunkPos, CompletableFuture<Either<List<Chunk>, ChunkHolder.Unloaded>> completableFuture) {
-        cir.setReturnValue(
-        completableFuture.thenComposeAsync(either -> either.map(list -> {
+    @Shadow protected abstract CompletableFuture<Either<List<Chunk>, ChunkHolder.Unloaded>> getRegion(ChunkPos centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus);
+
+    @Shadow protected abstract ChunkStatus getRequiredStatusForGeneration(ChunkStatus centerChunkTargetStatus, int distance);
+
+    /**
+     * @author
+     * @reason
+     */
+    @Overwrite
+    private CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> upgradeChunk(ChunkHolder holder, ChunkStatus requiredStatus) {
+        ChunkPos chunkPos = holder.getPos();
+        CompletableFuture<Either<List<Chunk>, ChunkHolder.Unloaded>> completableFuture = this.getRegion(chunkPos, requiredStatus.getTaskMargin(), i -> this.getRequiredStatusForGeneration(requiredStatus, i)) ;
+        this.world.getProfiler().visit(() -> "chunkGenerate " + requiredStatus.getId());
+        return completableFuture.thenComposeAsync(either -> either.map(list -> {
             try {
                 CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> future2 = requiredStatus.runGenerationTask(this.world, this.chunkGenerator, this.structureManager, this.serverLightingProvider, chunk -> this.convertToFullChunk(holder), (List<Chunk>)list);
                 if (WorldCache.shouldCache() && future2.isDone() && !requiredStatus.isAtLeast(ChunkStatus.FEATURES)) {
@@ -73,8 +85,7 @@ public abstract class ThreadedAnvilChunkStorageMixin {
         }, unloaded -> {
             this.releaseLightTicket(chunkPos);
             return CompletableFuture.completedFuture(Either.right(unloaded));
-        }), runnable -> this.worldGenExecutor.send(ChunkTaskPrioritySystem.createMessage(holder, runnable)))
-        );
+        }), runnable -> this.worldGenExecutor.send(ChunkTaskPrioritySystem.createMessage(holder, runnable)));
     }
 
     @ModifyVariable(method = "getUpdatedChunkNbt", at = @At(value="STORE"))
