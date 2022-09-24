@@ -20,6 +20,7 @@ import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -29,6 +30,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.IntFunction;
 
 @Mixin(ThreadedAnvilChunkStorage.class)
 public abstract class ThreadedAnvilChunkStorageMixin {
@@ -48,10 +50,24 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
     @Shadow protected abstract CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> convertToFullChunk(ChunkHolder chunkHolder);
 
-    @Inject(method = "generateChunk", at = @At("TAIL"), cancellable = true, locals = LocalCapture.CAPTURE_FAILSOFT)
-    public void storeIntoCache(ChunkHolder chunkHolder, ChunkStatus chunkStatus, CallbackInfoReturnable<CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>>> cir, ChunkPos chunkPos, CompletableFuture<Either<List<Chunk>, ChunkHolder.Unloaded>> completableFuture) {
-        cir.setReturnValue(
-        completableFuture.thenComposeAsync(
+    @Shadow protected abstract ChunkStatus getRequiredStatusForGeneration(ChunkStatus centerChunkTargetStatus, int distance);
+
+    @Shadow protected abstract CompletableFuture<Either<List<Chunk>, ChunkHolder.Unloaded>> createChunkRegionFuture(ChunkPos centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus);
+
+    /**
+     * @author
+     * @reason
+     */
+    @Overwrite
+    public CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> generateChunk(ChunkHolder chunkHolder, ChunkStatus chunkStatus) {
+        ChunkPos chunkPos = chunkHolder.getPos();
+        CompletableFuture<Either<List<Chunk>, ChunkHolder.Unloaded>> completableFuture = this.createChunkRegionFuture(chunkPos, chunkStatus.getTaskMargin(), (i) -> {
+            return this.getRequiredStatusForGeneration(chunkStatus, i);
+        });
+        this.world.getProfiler().visit(() -> {
+            return "chunkGenerate " + chunkStatus.getId();
+        });
+        return completableFuture.thenComposeAsync(
                 either -> either.map(
                         list -> {
                             try {
@@ -80,7 +96,6 @@ public abstract class ThreadedAnvilChunkStorageMixin {
                         }
                 ),
                 runnable -> this.worldGenExecutor.send(ChunkTaskPrioritySystem.createMessage(chunkHolder, runnable))
-        )
         );
     }
 

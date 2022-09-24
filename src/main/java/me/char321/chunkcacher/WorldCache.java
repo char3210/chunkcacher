@@ -10,7 +10,6 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.GeneratorOptions;
 
-import java.io.FileReader;
 import java.util.HashMap;
 import java.util.Map;
 
