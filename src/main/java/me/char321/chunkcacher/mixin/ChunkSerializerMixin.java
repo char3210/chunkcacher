@@ -16,6 +16,7 @@ import net.minecraft.world.chunk.light.LightingProvider;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
@@ -25,11 +26,12 @@ import java.util.Iterator;
 
 @Mixin(ChunkSerializer.class)
 public class ChunkSerializerMixin {
-    @Inject(method = "serialize", at = @At("RETURN") , locals = LocalCapture.CAPTURE_FAILHARD)
-    private static void serializeHeightmaps(ServerWorld world, Chunk chunk, CallbackInfoReturnable<NbtCompound> cir, ChunkPos x10, NbtCompound nbtCompound, NbtCompound nbtCompound2, UpgradeData x, ChunkSection[] x1, NbtList x2, LightingProvider x3, boolean x4, BiomeArray x5, NbtList x6, NbtList x7, TickScheduler x8, TickScheduler x9, NbtCompound compoundTag3) {
-        compoundTag3.put(Heightmap.Type.WORLD_SURFACE_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG)).asLongArray()));
-        compoundTag3.put(Heightmap.Type.OCEAN_FLOOR_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG)).asLongArray()));
 
+    @ModifyVariable(method = "serialize", at = @At("RETURN"), ordinal = 2)
+    private static NbtCompound serializeHeightmaps2(NbtCompound nbtCompound, ServerWorld world, Chunk chunk) {
+        nbtCompound.put(Heightmap.Type.WORLD_SURFACE_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG)).asLongArray()));
+        nbtCompound.put(Heightmap.Type.OCEAN_FLOOR_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG)).asLongArray()));
+        return nbtCompound;
     }
 
     @Redirect(method = "deserialize", at = @At(value = "INVOKE", target = "Ljava/util/EnumSet;iterator()Ljava/util/Iterator;"))
