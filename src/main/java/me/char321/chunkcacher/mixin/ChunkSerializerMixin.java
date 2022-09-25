@@ -11,6 +11,7 @@ import net.minecraft.world.TickScheduler;
 import net.minecraft.world.biome.source.BiomeArray;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.ProtoChunk;
 import net.minecraft.world.chunk.UpgradeData;
 import net.minecraft.world.chunk.light.LightingProvider;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,8 +30,10 @@ public class ChunkSerializerMixin {
 
     @ModifyVariable(method = "serialize", at = @At("RETURN"), ordinal = 2)
     private static NbtCompound serializeHeightmaps2(NbtCompound nbtCompound, ServerWorld world, Chunk chunk) {
-        nbtCompound.put(Heightmap.Type.WORLD_SURFACE_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG)).asLongArray()));
-        nbtCompound.put(Heightmap.Type.OCEAN_FLOOR_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG)).asLongArray()));
+        if (chunk instanceof ProtoChunk) {
+            nbtCompound.put(Heightmap.Type.WORLD_SURFACE_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG)).asLongArray()));
+            nbtCompound.put(Heightmap.Type.OCEAN_FLOOR_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG)).asLongArray()));
+        }
         return nbtCompound;
     }
 
