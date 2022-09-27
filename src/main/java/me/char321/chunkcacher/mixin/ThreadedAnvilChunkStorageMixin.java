@@ -38,7 +38,6 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
     @Shadow @Final private ChunkGenerator chunkGenerator;
 
-    @Shadow @Final private MessageListener<ChunkTaskPrioritySystem.Task<Runnable>> worldGenExecutor;
 
     @Shadow protected abstract void releaseLightTicket(ChunkPos pos);
 
@@ -54,12 +53,14 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
     @Shadow protected abstract CompletableFuture<Either<List<Chunk>, ChunkHolder.Unloaded>> createChunkRegionFuture(ChunkPos centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus);
 
+    @Shadow @Final private MessageListener<ChunkTaskPrioritySystem.Task<Runnable>> worldgenExecutor;
+
     /**
      * @author
      * @reason
      */
     @Overwrite
-    public CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> generateChunk(ChunkHolder chunkHolder, ChunkStatus chunkStatus) {
+    public CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> method_20617(ChunkHolder chunkHolder, ChunkStatus chunkStatus) { //generateChunk
         ChunkPos chunkPos = chunkHolder.getPos();
         CompletableFuture<Either<List<Chunk>, ChunkHolder.Unloaded>> completableFuture = this.createChunkRegionFuture(chunkPos, chunkStatus.getTaskMargin(), (i) -> {
             return this.getRequiredStatusForGeneration(chunkStatus, i);
@@ -67,36 +68,34 @@ public abstract class ThreadedAnvilChunkStorageMixin {
         this.world.getProfiler().visit(() -> {
             return "chunkGenerate " + chunkStatus.getId();
         });
-        return completableFuture.thenComposeAsync(
-                either -> either.map(
-                        list -> {
-                            try {
-                                CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> future2 = chunkStatus.runGenerationTask(
-                                        this.world, this.chunkGenerator, this.structureManager, this.serverLightingProvider, chunk -> this.convertToFullChunk(chunkHolder), list
-                                );
-                                if (WorldCache.shouldCache() && future2.isDone() && !chunkStatus.isAtLeast(ChunkStatus.FEATURES)) {
-                                    future2.getNow(null).ifLeft((chunk) -> {
-                                        WorldCache.addChunk(chunkPos, chunk, world);
-                                    });
-                                }
-                                this.worldGenerationProgressListener.setChunkStatus(chunkPos, chunkStatus);
-                                return future2;
-                            } catch (Exception var8) {
-                                CrashReport crashReport = CrashReport.create(var8, "Exception generating new chunk");
-                                CrashReportSection crashReportSection = crashReport.addElement("Chunk to be generated");
-                                crashReportSection.add("Location", String.format("%d,%d", chunkPos.x, chunkPos.z));
-                                crashReportSection.add("Position hash", ChunkPos.toLong(chunkPos.x, chunkPos.z));
-                                crashReportSection.add("Generator", this.chunkGenerator);
-                                throw new CrashException(crashReport);
-                            }
-                        },
-                        unloaded -> {
-                            this.releaseLightTicket(chunkPos);
-                            return CompletableFuture.completedFuture(Either.right(unloaded));
-                        }
-                ),
-                runnable -> this.worldGenExecutor.send(ChunkTaskPrioritySystem.createMessage(chunkHolder, runnable))
-        );
+        return completableFuture.thenComposeAsync((either) -> {
+            return either.map((list) -> {
+                try {
+                    CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> future2 = chunkStatus.runTask(this.world, this.chunkGenerator, this.structureManager, this.serverLightingProvider, (chunk) -> {
+                        return this.convertToFullChunk(chunkHolder);
+                    }, list);
+                    if (WorldCache.shouldCache() && future2.isDone() && !chunkStatus.isAtLeast(ChunkStatus.FEATURES)) {
+                        future2.getNow(null).ifLeft((chunk) -> {
+                            WorldCache.addChunk(chunkPos, chunk, world);
+                        });
+                    }
+                    this.worldGenerationProgressListener.setChunkStatus(chunkPos, chunkStatus);
+                    return future2;
+                } catch (Exception var8) {
+                    CrashReport crashReport = CrashReport.create(var8, "Exception generating new chunk");
+                    CrashReportSection crashReportSection = crashReport.addElement("Chunk to be generated");
+                    crashReportSection.add("Location", (Object)String.format("%d,%d", chunkPos.x, chunkPos.z));
+                    crashReportSection.add("Position hash", (Object)ChunkPos.toLong(chunkPos.x, chunkPos.z));
+                    crashReportSection.add("Generator", (Object)this.chunkGenerator);
+                    throw new CrashException(crashReport);
+                }
+            }, (unloaded) -> {
+                this.releaseLightTicket(chunkPos);
+                return CompletableFuture.completedFuture(Either.right(unloaded));
+            });
+        }, (runnable) -> {
+            this.worldgenExecutor.send(ChunkTaskPrioritySystem.createMessage(chunkHolder, runnable));
+        });
     }
 
     @ModifyVariable(method = "getUpdatedChunkTag", at = @At(value="STORE"))
