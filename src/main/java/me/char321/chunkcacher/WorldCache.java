@@ -11,12 +11,14 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.GeneratorOptions;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class WorldCache {
     public static boolean isGenerating = false;
     public static GeneratorOptions lastGeneratorOptions = null;
     public static Map<RegistryKey<World>, Long2ObjectLinkedOpenHashMap<NbtCompound>> cache = new HashMap<>();
+    public static List<ChunkPos> strongholdCache;
 
     public static void addChunk(ChunkPos chunkPos, Chunk chunk, ServerWorld world) {
         cache.computeIfAbsent(world.getRegistryKey(), k -> new Long2ObjectLinkedOpenHashMap<>()).put(chunkPos.toLong(), ChunkSerializer.serialize(world, chunk));
@@ -44,6 +46,7 @@ public class WorldCache {
 //TODO: different superflat presets for example are not detected, so the cache is not cleared and the world is not generated correctly
                 !lastGeneratorOptions.getChunkGenerator().getClass().equals(generatorOptions.getChunkGenerator().getClass())) {
             cache.clear();
+            strongholdCache = null;
             lastGeneratorOptions = generatorOptions;
         }
     }
