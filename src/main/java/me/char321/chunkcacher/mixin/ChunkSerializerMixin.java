@@ -18,7 +18,7 @@ import java.util.EnumSet;
 @Mixin(ChunkSerializer.class)
 public class ChunkSerializerMixin {
 
-    @ModifyVariable(method = "serialize", at = @At("RETURN"), ordinal = 2)
+    @ModifyVariable(method = "serialize", at = @At("RETURN"), ordinal = 1)
     private static NbtCompound serializeHeightmaps2(NbtCompound nbtCompound, ServerWorld world, Chunk chunk) {
         if (chunk instanceof ProtoChunk) {
             nbtCompound.put(Heightmap.Type.WORLD_SURFACE_WG.getName(), new NbtLongArray((chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG)).asLongArray()));
