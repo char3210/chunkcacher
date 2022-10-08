@@ -27,8 +27,9 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
     @Shadow @Final private ServerWorld world;
 
-    @Inject(method = "method_17225", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/WorldGenerationProgressListener;setChunkStatus(Lnet/minecraft/util/math/ChunkPos;Lnet/minecraft/world/chunk/ChunkStatus;)V"), locals = LocalCapture.CAPTURE_FAILHARD)
-    private void addToCache(ChunkPos chunkPos, ChunkHolder chunkHolder, ChunkStatus chunkStatus, Executor executor, List list, CallbackInfoReturnable<CompletableFuture> cir, CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> completableFuture) {
+    @Inject(method = "method_17225", at = @At(value = "RETURN"))
+    private void addToCache(ChunkPos chunkPos, ChunkHolder chunkHolder, ChunkStatus chunkStatus, Executor executor, List list, CallbackInfoReturnable<CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>>> cir) {
+        CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> completableFuture = cir.getReturnValue();
         if (WorldCache.shouldCache() && completableFuture.isDone() && !chunkStatus.isAtLeast(ChunkStatus.FEATURES)) {
             completableFuture.getNow(null).ifLeft((chunk) -> WorldCache.addChunk(chunkPos, chunk, world));
         }
@@ -36,11 +37,7 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
     @ModifyVariable(method = "getUpdatedChunkNbt", at = @At(value="STORE"))
     public NbtCompound loadFromCache(NbtCompound nbtCompound, ChunkPos pos) {
-        if (!WorldCache.shouldCache()) {
-            return nbtCompound;
-        }
-
-        if (nbtCompound == null) {
+        if (WorldCache.shouldCache() && nbtCompound == null) {
             return WorldCache.getChunkNbt(pos, world);
         }
         return nbtCompound;
