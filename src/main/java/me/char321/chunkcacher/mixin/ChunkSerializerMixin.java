@@ -1,29 +1,19 @@
 package me.char321.chunkcacher.mixin;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.ChunkSerializer;
 import net.minecraft.world.Heightmap;
-import net.minecraft.world.TickScheduler;
-import net.minecraft.world.biome.source.BiomeArray;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.ProtoChunk;
-import net.minecraft.world.chunk.UpgradeData;
-import net.minecraft.world.chunk.light.LightingProvider;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.EnumSet;
-import java.util.Iterator;
 
 @Mixin(ChunkSerializer.class)
 public class ChunkSerializerMixin {
@@ -36,8 +26,8 @@ public class ChunkSerializerMixin {
         return nbtCompound;
     }
 
-    @Redirect(method = "deserialize", at = @At(value = "INVOKE", target = "Ljava/util/EnumSet;iterator()Ljava/util/Iterator;"))
-    private static Iterator<Heightmap.Type> deserializeHeightmaps(EnumSet instance) {
-        return EnumSet.allOf(Heightmap.Type.class).iterator();
+    @Redirect(method = "deserialize", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkStatus;getHeightmapTypes()Ljava/util/EnumSet;"))
+    private static EnumSet<Heightmap.Type> deserializeHeightmaps(ChunkStatus instance) {
+        return EnumSet.allOf(Heightmap.Type.class);
     }
 }
