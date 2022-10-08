@@ -23,7 +23,6 @@ public class MinecraftServerMixin {
         WorldCache.isGenerating = true;
 
         WorldCache.checkGeneratorOptions(saveProperties.getGeneratorOptions());
-        System.out.println(Arrays.toString(OptionsScreen.class.getDeclaredMethods()));
     }
 
     @Inject(method = "loadWorld", at = @At("TAIL"))
