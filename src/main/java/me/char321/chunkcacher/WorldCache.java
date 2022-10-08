@@ -1,6 +1,7 @@
 package me.char321.chunkcacher;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+import me.voidxwalker.autoreset.Atum;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.ChunkPos;
@@ -22,7 +23,7 @@ public class WorldCache {
     }
 
     public static boolean shouldCache() {
-        return isGenerating;
+        return isGenerating && Atum.isRunning;
     }
 
     public static CompoundTag getChunkNbt(ChunkPos chunkPos, ServerWorld world) {
@@ -45,5 +46,9 @@ public class WorldCache {
             cache.clear();
             lastGeneratorOptions = generatorOptions;
         }
+    }
+
+    public static void clearCache() {
+        cache.clear();
     }
 }

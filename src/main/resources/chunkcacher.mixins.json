@@ -9,6 +9,7 @@
     "ThreadedAnvilChunkStorageMixin"
   ],
   "client": [
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
