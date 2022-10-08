@@ -1,7 +1,6 @@
 package me.char321.chunkcacher.mixin;
 
 import me.char321.chunkcacher.WorldCache;
-import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.WorldGenerationProgressListener;
 import net.minecraft.world.SaveProperties;
@@ -11,8 +10,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.Arrays;
 
 @Mixin(MinecraftServer.class)
 public class MinecraftServerMixin {
