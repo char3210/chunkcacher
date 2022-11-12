@@ -15,5 +15,8 @@
     "fabricloader": ">=0.12.2",
     "minecraft": ">=1.16 <=1.17.1",
     "atum": "*"
+  },
+  "breaks": {
+    "lazystronghold": "*"
   }
 }
