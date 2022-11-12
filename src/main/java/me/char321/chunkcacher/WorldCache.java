@@ -16,8 +16,8 @@ import java.util.Map;
 
 public class WorldCache {
     public static boolean isGenerating = false;
-    public static GeneratorOptions lastGeneratorOptions = null;
-    public static Map<RegistryKey<World>, Long2ObjectLinkedOpenHashMap<NbtCompound>> cache = new HashMap<>();
+    private static GeneratorOptions lastGeneratorOptions;
+    private static final Map<RegistryKey<World>, Long2ObjectLinkedOpenHashMap<NbtCompound>> cache = new HashMap<>();
 
     public static void addChunk(ChunkPos chunkPos, Chunk chunk, ServerWorld world) {
         cache.computeIfAbsent(world.getRegistryKey(), k -> new Long2ObjectLinkedOpenHashMap<>()).put(chunkPos.toLong(), ChunkSerializer.serialize(world, chunk));
@@ -36,15 +36,17 @@ public class WorldCache {
     /**
      * Checks if the generator options have changed, if so, clear the cache
      * dude github copilot is so cool it auto generated these comments
+
+     * kept as fallback just in case some Atum update messes anything up
+     * not perfect but good enough for that purpose
      */
     public static void checkGeneratorOptions(GeneratorOptions generatorOptions) {
         if (lastGeneratorOptions == null ||
                 lastGeneratorOptions.getSeed() != generatorOptions.getSeed() ||
                 lastGeneratorOptions.shouldGenerateStructures() != generatorOptions.shouldGenerateStructures() ||
-                lastGeneratorOptions.hasBonusChest() != generatorOptions.hasBonusChest() ||
-//TODO: different superflat presets for example are not detected, so the cache is not cleared and the world is not generated correctly
-                !lastGeneratorOptions.getChunkGenerator().getClass().equals(generatorOptions.getChunkGenerator().getClass())) {
-            cache.clear();
+                lastGeneratorOptions.isFlatWorld() != generatorOptions.isFlatWorld()
+        ) {
+            clearCache();
             lastGeneratorOptions = generatorOptions;
         }
     }
