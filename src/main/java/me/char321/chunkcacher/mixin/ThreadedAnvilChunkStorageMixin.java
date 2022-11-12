@@ -24,7 +24,7 @@ public class ThreadedAnvilChunkStorageMixin {
 
     @Shadow @Final private ServerWorld world;
 
-    @Inject(method = "method_17225", at = @At("RETURN"))
+    @Inject(method = "method_17225", at = @At("RETURN"), remap = false)
     private void addToCache(CallbackInfoReturnable<CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>>> cir) {
         if (WorldCache.shouldCache() && cir.getReturnValue().isDone()) {
             cir.getReturnValue().getNow(null).ifLeft((chunk) -> {
