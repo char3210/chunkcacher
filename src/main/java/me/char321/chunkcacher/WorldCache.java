@@ -15,8 +15,8 @@ import java.util.Map;
 
 public class WorldCache {
     public static boolean isGenerating = false;
-    public static LevelInfo lastGeneratorOptions = null;
-    public static Map<DimensionType, Long2ObjectLinkedOpenHashMap<CompoundTag>> cache = new HashMap<>();
+    private static LevelInfo lastGeneratorOptions;
+    private static final Map<DimensionType, Long2ObjectLinkedOpenHashMap<CompoundTag>> cache = new HashMap<>();
 
     public static void addChunk(ChunkPos chunkPos, Chunk chunk, ServerWorld world) {
         cache.computeIfAbsent(world.getDimension().getType(), k -> new Long2ObjectLinkedOpenHashMap<>()).put(chunkPos.toLong(), ChunkSerializer.serialize(world, chunk));
@@ -35,15 +35,17 @@ public class WorldCache {
     /**
      * Checks if the generator options have changed, if so, clear the cache
      * dude github copilot is so cool it auto generated these comments
+
+     * kept as fallback just in case some Atum update messes anything up
+     * not perfect but good enough for that purpose
      */
     public static void checkGeneratorOptions(LevelInfo generatorOptions) {
         if (lastGeneratorOptions == null ||
                 lastGeneratorOptions.getSeed() != generatorOptions.getSeed() ||
                 lastGeneratorOptions.hasStructures() != generatorOptions.hasStructures() ||
-                lastGeneratorOptions.hasBonusChest() != generatorOptions.hasBonusChest() ||
-//TODO: different superflat presets for example are not detected, so the cache is not cleared and the world is not generated correctly
-                lastGeneratorOptions.getGeneratorType() != generatorOptions.getGeneratorType()) {
-            cache.clear();
+                lastGeneratorOptions.getGeneratorType() != generatorOptions.getGeneratorType()
+        ) {
+            clearCache();
             lastGeneratorOptions = generatorOptions;
         }
     }
