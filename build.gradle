@@ -1,9 +1,32 @@
 plugins {
     id 'fabric-loom' version '1.0-SNAPSHOT'
     id 'maven-publish'
+    id 'org.ajoberstar.grgit' version '4.1.0'
 }
 
-version = project.mod_version
+def getVersionMetadata() {
+    // CI builds version numbers
+    def build_id = System.getenv("RELEASE_NUMBER")
+    if (build_id != null) {
+        return build_id + ".0.0"
+    }
+
+    // Development builds
+    if (grgit == null) {
+        return "dev"
+    }
+
+    // Named development builds
+    def id = grgit.head().abbreviatedId
+    if (!grgit.status().clean) {
+        id += "-dirty"
+    }
+
+    return "rev.${id}"
+}
+
+archivesBaseName = "${project.mod_id}-${project.minecraft_version}"
+version = "${getVersionMetadata()}"
 group = project.maven_group
 
 repositories {
@@ -24,11 +47,12 @@ dependencies {
 }
 
 processResources {
+    inputs.property "mod_id", project.mod_id
     inputs.property "version", project.version
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand "mod_id": project.mod_id, "version": project.version
     }
 }
 
@@ -49,7 +73,6 @@ java {
     if (JavaVersion.current() < javaVersion) {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
-    archivesBaseName = project.archives_base_name
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.
     // If you remove this line, sources will not be generated.
