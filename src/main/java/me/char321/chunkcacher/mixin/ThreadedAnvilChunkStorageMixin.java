@@ -16,27 +16,27 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @Mixin(ThreadedAnvilChunkStorage.class)
 public class ThreadedAnvilChunkStorageMixin {
 
     @Shadow @Final ServerWorld world;
 
-    @Inject(method = "method_17225", at = @At("RETURN"), remap = false)
-    private void addToCache(CallbackInfoReturnable<CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>>> cir) {
-        if (WorldCache.shouldCache() && cir.getReturnValue().isDone()) {
-            cir.getReturnValue().getNow(null).ifLeft((chunk) -> {
-                if (!chunk.getStatus().isAtLeast(ChunkStatus.FEATURES)) {
-                    WorldCache.addChunk(chunk.getPos(), chunk, world);
-                }
-            });
+    @Inject(method = "method_17225", at = @At(value = "RETURN"))
+    private void addToCache(ChunkPos chunkPos, ChunkHolder chunkHolder, ChunkStatus chunkStatus, Executor executor, List<?> list, CallbackInfoReturnable<CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>>> cir) {
+        CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> completableFuture = cir.getReturnValue();
+        if (WorldCache.shouldCache() && completableFuture.isDone() && !chunkStatus.isAtLeast(ChunkStatus.FEATURES)) {
+            completableFuture.getNow(null).ifLeft((chunk) -> WorldCache.addChunk(chunkPos, chunk, world));
         }
     }
 
-    @ModifyVariable(method = "method_17256", at = @At("STORE"), remap = false)
-    private NbtCompound loadFromCache(NbtCompound nbtCompound, ChunkPos pos) {
+    @ModifyVariable(method = "getUpdatedChunkNbt", at = @At(value="STORE"))
+    public NbtCompound loadFromCache(NbtCompound nbtCompound, ChunkPos pos) {
         if (WorldCache.shouldCache() && nbtCompound == null) {
             return WorldCache.getChunkNbt(pos, world);
         }
