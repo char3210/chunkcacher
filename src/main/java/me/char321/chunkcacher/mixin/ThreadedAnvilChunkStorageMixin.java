@@ -35,6 +35,10 @@ public class ThreadedAnvilChunkStorageMixin {
         }
     }
 
+    /*
+    1.19 changes the return type of getUpdatedChunkNbt to a CompletableFuture, so instead we
+    modify the nbtCompound a bit later in loadChunk to keep compatibility
+     */
     @ModifyVariable(method = "method_17256", at = @At("STORE"), remap = false)
     private NbtCompound loadFromCache(NbtCompound nbtCompound, ChunkPos pos) {
         if (WorldCache.shouldCache() && nbtCompound == null) {
