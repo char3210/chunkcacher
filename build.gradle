@@ -25,7 +25,7 @@ def getVersionMetadata() {
     return "rev.${id}"
 }
 
-archivesBaseName = "${project.mod_id}-${project.minecraft_version}"
+archivesBaseName = "${project.mod_id}-${project.supported_versions}"
 version = "${getVersionMetadata()}"
 group = project.maven_group
 
