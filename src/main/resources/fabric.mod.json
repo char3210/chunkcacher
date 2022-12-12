@@ -13,10 +13,11 @@
   ],
   "depends": {
     "fabricloader": ">=0.12.2",
-    "minecraft": ">=1.18",
+    "minecraft": "1.18.x",
     "atum": "*"
   },
   "breaks": {
     "lazystronghold": "*"
+    "worldpreview": "*"
   }
 }
