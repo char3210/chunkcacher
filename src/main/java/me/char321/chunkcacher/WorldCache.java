@@ -3,9 +3,9 @@ package me.char321.chunkcacher;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import me.voidxwalker.autoreset.Atum;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.ChunkSerializer;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -46,8 +46,7 @@ public class WorldCache {
     public static void checkGeneratorOptions(GeneratorOptions generatorOptions) {
         if (lastGeneratorOptions == null ||
                 lastGeneratorOptions.getSeed() != generatorOptions.getSeed() ||
-                lastGeneratorOptions.shouldGenerateStructures() != generatorOptions.shouldGenerateStructures() ||
-                lastGeneratorOptions.isFlatWorld() != generatorOptions.isFlatWorld()
+                lastGeneratorOptions.shouldGenerateStructures() != generatorOptions.shouldGenerateStructures()
         ) {
             clearCache();
             lastGeneratorOptions = generatorOptions;

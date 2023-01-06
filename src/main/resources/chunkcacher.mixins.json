@@ -4,7 +4,6 @@
   "package": "me.char321.chunkcacher.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "ChunkGeneratorMixin",
     "ChunkSerializerMixin",
     "MinecraftServerMixin",
     "ThreadedAnvilChunkStorageMixin"

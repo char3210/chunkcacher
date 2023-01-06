@@ -14,9 +14,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Mixin(ThreadedAnvilChunkStorage.class)
@@ -39,11 +40,17 @@ public class ThreadedAnvilChunkStorageMixin {
     1.19 changes the return type of getUpdatedChunkNbt to a CompletableFuture, so instead we
     modify the nbtCompound a bit later in loadChunk to keep compatibility
      */
-    @ModifyVariable(method = "method_17256", at = @At("STORE"), remap = false)
-    private NbtCompound loadFromCache(NbtCompound nbtCompound, ChunkPos pos) {
-        if (WorldCache.shouldCache() && nbtCompound == null) {
-            return WorldCache.getChunkNbt(pos, world);
-        }
-        return nbtCompound;
+
+
+//    @ModifyVariable(method = "method_17256", at = @At("STORE"), remap = false)
+//    private NbtCompound loadFromCache(NbtCompound nbtCompound, ChunkPos pos) {
+//        if (WorldCache.shouldCache() && nbtCompound == null) {
+//            return WorldCache.getChunkNbt(pos, world);
+//        }
+//        return nbtCompound;
+//    }
+    @Redirect(method="getUpdatedChunkNbt", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ThreadedAnvilChunkStorage;getNbt(Lnet/minecraft/util/math/ChunkPos;)Ljava/util/concurrent/CompletableFuture;"))
+    private CompletableFuture<Optional<NbtCompound>> loadFromCache(ThreadedAnvilChunkStorage instance, ChunkPos chunkPos) {
+        return instance.getNbt(chunkPos).thenApply(op -> op.isPresent() ? op : Optional.ofNullable(WorldCache.getChunkNbt(chunkPos, world)));
     }
 }
